@@ -1,0 +1,86 @@
+Program.Sub.ScreenSU.Start
+Gui.frmConfig..Create
+Gui.frmConfig..Caption("Configuration Setup")
+Gui.frmConfig..Size(16020,2745)
+Gui.frmConfig..MinX(0)
+Gui.frmConfig..MinY(0)
+Gui.frmConfig..Position(0,0)
+Gui.frmConfig..BackColor(-2147483633)
+Gui.frmConfig..MousePointer(0)
+Gui.frmConfig..Event(UnLoad,frmRuleSetup_UnLoad)
+Gui.frmConfig.gsgcRules.Create(GsGridControl)
+Gui.frmConfig.gsgcRules.Size(15525,1290)
+Gui.frmConfig.gsgcRules.Position(150,165)
+Gui.frmConfig.cmdSave.Create(Button)
+Gui.frmConfig.cmdSave.Size(1365,375)
+Gui.frmConfig.cmdSave.Position(135,1620)
+Gui.frmConfig.cmdSave.Caption("Save")
+Gui.frmConfig.cmdSave.Event(Click,cmdSave_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.cmdSave_Click.Start
+f.Intrinsic.Control.Try
+	v.Local.sFileLocat.Declare(string)
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5700_CONFIG.xml",v.Local.sFileLocat)
+	f.Data.DataTable.SaveToXML("dt",0,true,v.Local.sfileLocat)
+	f.Intrinsic.UI.Msgbox("Successfully Updated.")
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmRuleSetup_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.Main.Start
+f.Intrinsic.Control.Try
+	'Open connection
+	f.ODBC.Connection!con.opencompanyconnection
+	
+	'Check if the file exists
+	v.Local.bFileCheck.Declare(boolean)
+	v.Local.sFileLocat.Declare(string)
+	v.Local.sSql.Declare(string)
+	v.Local.sWC.Declare(string)
+	v.Local.i.Declare(long)
+	
+	'Populate workcentres from table
+	v.Local.ssql.Set("SELECT rtrim(MACHINE) AS 'WC' FROM V_WORKCENTERS")
+	f.Data.DataTable.CreateFromSQL("dtWC","con",v.Local.ssql)
+	F.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtWC.RowCount--,1)
+		f.Intrinsic.String.Concat(v.Local.sWC,v.DataTable.dtWC(v.Local.i).WC!fieldvaltrim,"*!*",v.Local.sWC)
+	F.Intrinsic.Control.Next(v.Local.i)
+	
+	'Config FILE
+	f.Intrinsic.String.Concat(v.Caller.GasDir,"\",V.Caller.CompanyCode,"_GAB_5700_CONFIG.xml",v.Local.sFileLocat)
+	f.Intrinsic.File.Exists(v.Local.sFileLocat,v.Local.bFileCheck)
+	f.Intrinsic.Control.If(v.Local.bFileCheck)
+		f.Data.DataTable.CreateFromXML("dt",v.Local.sFileLocat,true)
+	f.Intrinsic.Control.Else
+		f.Data.DataTable.Create("dt",true)
+		f.Data.DataTable.AddColumn("dt","StartNumber","Integer")
+		f.Data.DataTable.AddRow("dt","StartNumber","100000")
+	f.Intrinsic.Control.EndIf
+	
+	' Config Grid
+	gui.frmConfig.gsgcRules.DataSource("dt")
+	gui.frmConfig.gsgcRules.AddGridviewFromDatatable("gv","dt")
+	gui.frmConfig.gsgcRules.anchor(15)
+
+	gui.frmConfig.gsgcRules.SetColumnProperty("gv","StartNumber","ReadOnly","False")
+	gui.frmConfig.gsgcRules.SetColumnProperty("gv","StartNumber","AllowEdit","True")
+
+	'Set Bold
+	gui.frmConfig.gsgcRules.SetColumnProperty("gv","StartNumber","HeaderFontBold","True")
+
+	gui.frmConfig..Show
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmRuleSetup_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.frmRuleSetup_UnLoad.Start
+F.Intrinsic.Control.End
+Program.Sub.frmRuleSetup_UnLoad.End
